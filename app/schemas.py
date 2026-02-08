@@ -96,14 +96,14 @@ class MeOut(BaseModel):
     class Config:
         from_attributes = True
 
+class OrderAdminOut(OrderOut):
+    user_name: str
+
 class OrdersPageOut(BaseModel):
     items: list[OrderAdminOut]
     total: int
     page: int
     limit: int
-
-class OrderAdminOut(OrderOut):
-    user_name: str
 
 OrderAdminOut.model_rebuild()
 OrdersPageOut.model_rebuild()
