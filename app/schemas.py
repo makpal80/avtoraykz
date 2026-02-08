@@ -46,6 +46,18 @@ class OrderCreate(BaseModel):
     items: list[OrderItemCreate]
     payment_method: str
 
+class OrderItemOut(BaseModel):
+    id: int
+    product_id: int
+    quantity: int
+    original_price: float
+    product_discount_percent: int
+    price: float  # after product discount'
+    product: ProductOut
+
+    class Config:
+        from_attributes = True
+
 class OrderOut(BaseModel):
     id: int
     user_id: int
@@ -59,18 +71,6 @@ class OrderOut(BaseModel):
     created_at: datetime
     user_order_number: int
     items: list[OrderItemOut] = [] 
-
-    class Config:
-        from_attributes = True
-
-class OrderItemOut(BaseModel):
-    id: int
-    product_id: int
-    quantity: int
-    original_price: float
-    product_discount_percent: int
-    price: float  # after product discount'
-    product: ProductOut
 
     class Config:
         from_attributes = True
