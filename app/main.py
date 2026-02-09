@@ -13,7 +13,7 @@ app = FastAPI(title="Autoray")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://avtoray.vercel.app",],  
+    allow_origins=["http://localhost:3000", "https://avtoray.vercel.app", "https://avtoray.kz", "https://www.avtoray.kz",],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
