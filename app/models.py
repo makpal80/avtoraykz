@@ -14,7 +14,7 @@ class User(Base):
     car_brand = Column(String)
     hashed_password = Column(String)
     orders_count = Column(Integer, default=0)
-    discount = Column(Integer, default=3)
+    discount = Column(Integer)
     orders = relationship("Order", back_populates="user")
     is_admin = Column(Boolean, default=False)
 
