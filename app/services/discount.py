@@ -1,5 +1,5 @@
 def calculate_discount(orders_count: int) -> int:
-    if orders_count <= 1:
+    if orders_count == 1:
         return 3
     if orders_count == 2:
         return 4
