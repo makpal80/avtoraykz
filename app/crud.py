@@ -12,7 +12,7 @@ def create_user(db: Session, user):
         name=user.name,
         car_brand=user.car_brand,
         hashed_password=hash_password(user.password),
-        discount=5
+        discount=calculate_discount(0),
     )
     db.add(db_user)
     db.commit()
