@@ -14,6 +14,7 @@ router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(get_cu
 PAYMENT_LABELS = {
     "cash": "Наличные",
     "bank": "Банк / перевод",
+    "installment": "Банк (рассрочка)"
 }
 
 STATUS_LABELS = {
