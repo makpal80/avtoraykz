@@ -62,6 +62,11 @@ def create_order(db: Session, user: models.User, order: schemas.OrderCreate):
     user_discount_percent = int(user.discount or 0)
     final_amount = total_amount * (1 - user_discount_percent / 100)
 
+    if order.payment_method == "installment":
+        final_amount *= 1.15
+
+    final_amount = round(final_amount)
+
 
     last_num = (
         db.query(func.max(models.Order.user_order_number))
