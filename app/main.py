@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 import os
@@ -6,8 +8,7 @@ from app import models, schemas, crud
 from app.auth import verify_password
 from app.routers import admin, orders, auth, public, users
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-load_dotenv()
+
 
 app = FastAPI(title="Autoray")
 
