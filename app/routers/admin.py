@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session, joinedload
 from fastapi.responses import StreamingResponse
 import pandas as pd
@@ -7,6 +7,7 @@ from datetime import datetime
 from app.database import get_db
 from app import crud, schemas, models
 from app.deps import get_current_admin
+from app.cloudinary_client import upload_image
 
 
 router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(get_current_admin)])
@@ -128,6 +129,7 @@ def export_client_report_excel(
         for it in o.items:
             product_name = it.product.name if it.product else f"product_id={it.product_id}"
             line_total = float(it.price) * int(it.quantity)
+            type_name = it.type.name if getattr(it, "type", None) else "—"
 
             rows.append({
                 "Дата": o.created_at.strftime("%d.%m.%Y"),
@@ -136,6 +138,7 @@ def export_client_report_excel(
                 "Метод оплаты": PAYMENT_LABELS.get(o.payment_method, o.payment_method),
 
                 "Товар": product_name,
+                "Тип": type_name,
                 "Кол-во": it.quantity,
                 "Цена за шт": float(it.price),
                 "Сумма по позиции": line_total,
@@ -184,6 +187,8 @@ def export_client_report_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+
 @router.patch("/products/{product_id}", response_model=schemas.ProductOut)
 def update_product(
     product_id: int,
@@ -220,7 +225,11 @@ def orders_count(db: Session = Depends(get_db)):
 def get_order_details(order_id: int, db: Session = Depends(get_db)):
     o = (
         db.query(models.Order)
-        .options(joinedload(models.Order.user), joinedload(models.Order.items).joinedload(models.OrderItem.product))
+        .options(
+        joinedload(models.Order.user), 
+        joinedload(models.Order.items).joinedload(models.OrderItem.product), 
+        joinedload(models.Order.items).joinedload(models.OrderItem.type),
+        )
         .filter(models.Order.id == order_id)
         .first()
     )
@@ -247,7 +256,35 @@ def get_order_details(order_id: int, db: Session = Depends(get_db)):
                 "price": float(it.price),
                 "product_discount_percent": int(getattr(it, "product_discount_percent", 0)),
                 "line_total": float(it.price) * int(it.quantity),
+                "product_type_id": it.product_type_id,
+                "type": (
+                    {
+                        "id": it.type.id,
+                        "product_id": it.type.product_id,
+                        "name": it.type.name,
+                        "image_url": it.type.image_url,
+                    }
+                    if it.type else None
+                ),
             }
             for it in o.items
         ],
     }
+
+@router.post("/products/{product_id}/types", response_model=schemas.ProductTypeOut)
+def add_product_type(
+    product_id: int,
+    name: str = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    image_url = upload_image(file)
+    return crud.create_product_type(db, product_id, name, image_url)
+
+@router.delete("/types/{type_id}")
+def remove_product_type(type_id: int, db: Session = Depends(get_db)):
+    try:
+        crud.delete_product_type(db, type_id)
+        return {"ok": True}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
