@@ -2,6 +2,7 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic
+cloudinary>=1.36.0
 python-multipart
 passlib==1.7.4
 bcrypt==4.0.1
@@ -9,4 +10,5 @@ python-jose[cryptography]
 pandas
 python-dotenv
 openpyxl
+
 
