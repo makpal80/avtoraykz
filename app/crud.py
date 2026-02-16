@@ -43,6 +43,16 @@ def create_order(db: Session, user: models.User, order: schemas.OrderCreate):
         product = db.query(models.Product).filter(models.Product.id == it.product_id).first()
         if not product or not product.active:
             raise ValueError("Product not found or inactive")
+        
+        type_id = getattr(it, "type_id", None)
+        if type_id is not None:
+            t = (
+                db.query(models.ProductType)
+                .filter(models.ProductType.id == type_id, models.ProductType.product_id == product.id)
+                .first()
+            )
+            if not t:
+                raise ValueError("Invalid product type for this product")
 
         prod_disc = int(product.discount_percent or 0)
         original_price = float(product.price)
@@ -57,6 +67,7 @@ def create_order(db: Session, user: models.User, order: schemas.OrderCreate):
             original_price=original_price,
             product_discount_percent=prod_disc,
             price=unit_price,
+            product_type_id=it.type_id,
         ))
 
     user_discount_percent = int(user.discount or 0)
@@ -95,7 +106,10 @@ def create_order(db: Session, user: models.User, order: schemas.OrderCreate):
 def approve_order(db: Session, order_id: int):
     order = (
         db.query(models.Order)
-        .options(joinedload(models.Order.user), joinedload(models.Order.items))
+        .options(joinedload(models.Order.user), 
+        joinedload(models.Order.items), 
+        joinedload(models.Order.items).joinedload(models.OrderItem.type),
+        )
         .filter(models.Order.id == order_id)
         .first()
     )
@@ -152,7 +166,9 @@ def get_orders_for_report(db: Session, date_from: datetime, date_to: datetime):
 def get_client_orders_with_items(db, user_id: int, date_from: datetime, date_to: datetime):
     return (
         db.query(models.Order)
-        .options(joinedload(models.Order.items).joinedload(models.OrderItem.product))
+        .options(
+            joinedload(models.Order.items).joinedload(models.OrderItem.product), 
+            joinedload(models.Order.items).joinedload(models.OrderItem.type),)
         .filter(models.Order.user_id == user_id)
         .filter(models.Order.created_at >= date_from)
         .filter(models.Order.created_at <= date_to)
@@ -236,3 +252,25 @@ def admin_get_orders(db: Session, page: int = 1, limit: int = 10, q: str | None 
     
 def admin_orders_count(db: Session):
     return db.query(func.count(models.Order.id)).scalar() or 0
+
+def get_products(db: Session):
+    return (
+        db.query(models.Product)
+        .options(joinedload(models.Product.types))
+        .order_by(models.Product.id.desc())
+        .all()
+    )
+
+def create_product_type(db: Session, product_id: int, name: str, image_url: str):
+    t = models.ProductType(product_id=product_id, name=name, image_url=image_url)
+    db.add(t)
+    db.commit()
+    db.refresh(t)
+    return t
+
+def delete_product_type(db: Session, type_id: int):
+    t = db.query(models.ProductType).filter(models.ProductType.id == type_id).first()
+    if not t:
+        raise ValueError("Type not found")
+    db.delete(t)
+    db.commit()
