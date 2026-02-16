@@ -18,6 +18,17 @@ class User(Base):
     orders = relationship("Order", back_populates="user")
     is_admin = Column(Boolean, default=False)
 
+
+class ProductType(Base):
+    __tablename__ = "product_types"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), index=True, nullable=False)
+    name = Column(String, nullable=False)
+    image_url = Column(String, nullable=False)
+
+    product = relationship("Product", back_populates="types")
+
 class Product(Base):
     __tablename__ = "products"
 
@@ -26,6 +37,7 @@ class Product(Base):
     price = Column(Float, nullable=False)
     active = Column(Boolean, default=True)
     discount_percent = Column(Integer, default=0)
+    types = relationship("ProductType", back_populates="product", cascade="all, delete-orphan")
 
 
 class Order(Base):
@@ -70,6 +82,8 @@ class OrderItem(Base):
 
     order = relationship("Order", back_populates="items")
     product = relationship("Product")
+    product_type_id = Column(Integer, ForeignKey("product_types.id"), nullable=True)
+    type = relationship("ProductType")
 
 
 
