@@ -31,9 +31,19 @@ class ProductBase(BaseModel):
 class ProductCreate(ProductBase):
     pass
 
+class ProductTypeOut(BaseModel):
+    id: int
+    product_id: int
+    name: str
+    image_url: str
+
+    class Config:
+        from_attributes = True
+
 class ProductOut(ProductBase):
     id: int
     active: bool
+    types: list[ProductTypeOut] = []
 
     class Config:
         from_attributes = True
@@ -41,6 +51,7 @@ class ProductOut(ProductBase):
 class OrderItemCreate(BaseModel):
     product_id: int
     quantity: int
+    type_id: int | None = None
 
 class OrderCreate(BaseModel):
     items: list[OrderItemCreate]
@@ -53,7 +64,9 @@ class OrderItemOut(BaseModel):
     original_price: float
     product_discount_percent: int
     price: float  # after product discount'
+    product_type_id: int | None = None
     product: ProductOut
+    type: ProductTypeOut | None = None
 
     class Config:
         from_attributes = True
@@ -104,6 +117,7 @@ class OrdersPageOut(BaseModel):
     total: int
     page: int
     limit: int
+
 
 OrderAdminOut.model_rebuild()
 OrdersPageOut.model_rebuild()
